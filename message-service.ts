@@ -19,21 +19,21 @@ const from = process.env.TWILIO_FROM_NUMBER;
 const to = process.env.TWILIO_TO_NUMBER;
 
 const fetchGarageDoorState = async (): Promise<State> => {
-    try {
-      const myQ = new myQApi(username, password);
-      await myQ.refreshDevices();
-      const devicesInfo = myQ.devices;
+  try {
+    const myQ = new myQApi(username, password);
+    await myQ.refreshDevices();
+    const devicesInfo = myQ.devices;
 
-      const garageDoor: Readonly<myQDeviceInterface> | undefined =
-        devicesInfo.find((v) => v.device_platform === "myq");
+    const garageDoor: Readonly<myQDeviceInterface> | undefined =
+      devicesInfo.find((v) => v.device_platform === "myq");
 
-      return garageDoor?.state as State;
-      // Commenting this out for now:
-      // const openGarage = myQ.execute(garageDoor as Readonly<myQDeviceInterface>, 'close');
-    } catch (error) {
-      return error;
-    }
-  };
+    return garageDoor?.state as State;
+    // Commenting this out for now:
+    // const openGarage = myQ.execute(garageDoor as Readonly<myQDeviceInterface>, 'close');
+  } catch (error) {
+    return error;
+  }
+};
 
 const getDate = (date: Date): string => {
   const messageDate = new Date(date);
@@ -67,13 +67,18 @@ const createBodyMessage = (garageDoorState: State): MessageResponse => {
   const lastUpdate = new Date(garageDoorState?.last_update as string);
   const timeAgo = getDate(lastUpdate);
 
-
-  if (garageDoorState && garageDoorState?.door_state.toLowerCase() == "closed") {
-    return { statusCode: 200, body: '' };
+  if (
+    garageDoorState &&
+    garageDoorState?.door_state.toLowerCase() == "closed"
+  ) {
+    return { statusCode: 200, body: "" };
   }
 
-  return { statusCode: 200, body: `\nCurrent garage state: ${garageDoorState?.door_state}\nLast time updated: ${timeAgo}` };
-}
+  return {
+    statusCode: 200,
+    body: `\nCurrent garage state: ${garageDoorState?.door_state}\nLast time updated: ${timeAgo}`,
+  };
+};
 
 export const getBodyMessage = async (): Promise<MessageResponse> => {
   try {
@@ -81,13 +86,12 @@ export const getBodyMessage = async (): Promise<MessageResponse> => {
     const message = createBodyMessage(response);
 
     return message;
-  }
-  catch(error) {
-      return {
-        statusCode: 500,
-        body: `\nThe following error has occurred: ${error.message}`,
-      };
+  } catch (error) {
+    return {
+      statusCode: 500,
+      body: `\nThe following error has occurred: ${error.message}`,
     };
+  }
 };
 
 export const sendMessage = async (): Promise<MessageResponse> => {
@@ -102,3 +106,15 @@ export const sendMessage = async (): Promise<MessageResponse> => {
   }
   return messageResponse;
 };
+
+const getGarageUpdates = async () => {
+  const message = await sendMessage();
+  const response = {
+    statusCode: message?.statusCode,
+    body: JSON.stringify(message?.body),
+  };
+
+  return response;
+};
+
+getGarageUpdates();
