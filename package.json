@@ -7,7 +7,7 @@
   "main": "message-service.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon message-service.js"
+    "start": "node message-service.js"
   },
   "repository": {
     "type": "git",
