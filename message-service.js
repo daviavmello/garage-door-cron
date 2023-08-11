@@ -1,49 +1,37 @@
-import * as dotenv from "dotenv";
+const dotenv = require("dotenv");
 dotenv.config();
 
-import { myQApi, myQDeviceInterface } from "@hjdhjd/myq";
+const { myQApi, myQDeviceInterface } = require("@hjdhjd/myq");
 
-type State = myQDeviceInterface["state"];
-type DoorState = State["door_state"];
-
-interface MessageResponse {
-  statusCode: number;
-  body: string;
-}
-
-const username = process.env.MY_Q_EMAIL as string;
-const password = process.env.MY_Q_PASSWORD as string;
+const username = process.env.MY_Q_EMAIL;
+const password = process.env.MY_Q_PASSWORD;
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 
 const from = process.env.TWILIO_FROM_NUMBER;
 const to = process.env.TWILIO_TO_NUMBER;
 
-const fetchGarageDoorState = async (): Promise<State> => {
+const fetchGarageDoorState = async () => {
   try {
     const myQ = new myQApi(username, password);
     await myQ.refreshDevices();
     const devicesInfo = myQ.devices;
 
-    const garageDoor: Readonly<myQDeviceInterface> | undefined =
-      devicesInfo.find((v) => v.device_platform === "myq");
+    const garageDoor = devicesInfo.find((v) => v.device_platform === "myq");
 
-    return garageDoor?.state as State;
-    // Commenting this out for now:
-    // const openGarage = myQ.execute(garageDoor as Readonly<myQDeviceInterface>, 'close');
+    return garageDoor?.state;
   } catch (error) {
     return error;
   }
 };
 
-const getDate = (date: Date): string => {
+const getDate = (date) => {
   const messageDate = new Date(date);
-  const todayDate = new Date(); // Check if messageDate is less than 24 hours ago
+  const todayDate = new Date();
 
   const timeDiff = todayDate.getTime() - messageDate.getTime();
   const diffInDays = timeDiff / (1000 * 60 * 60 * 24);
   if (diffInDays < 1) {
-    // Format time in AM/PM format
     const hours = Number(
       messageDate.toLocaleString("en-US", {
         timeZone: "America/New_York",
@@ -56,7 +44,6 @@ const getDate = (date: Date): string => {
     const formattedHours = hours % 12 || 12;
     return `${formattedHours}:${minutes} ${amPm}`;
   } else {
-    // Format date in month/day/year format
     const month = messageDate.getMonth() + 1;
     const day = messageDate.getDate();
     const year = messageDate.getFullYear();
@@ -64,8 +51,8 @@ const getDate = (date: Date): string => {
   }
 };
 
-const createBodyMessage = (garageDoorState: State): MessageResponse => {
-  const lastUpdate = new Date(garageDoorState?.last_update as string);
+const createBodyMessage = (garageDoorState) => {
+  const lastUpdate = new Date(garageDoorState?.last_update);
   const timeAgo = getDate(lastUpdate);
 
   if (
@@ -81,7 +68,7 @@ const createBodyMessage = (garageDoorState: State): MessageResponse => {
   };
 };
 
-export const getBodyMessage = async (): Promise<MessageResponse> => {
+const getBodyMessage = async () => {
   try {
     const response = await fetchGarageDoorState();
     const message = createBodyMessage(response);
@@ -95,7 +82,7 @@ export const getBodyMessage = async (): Promise<MessageResponse> => {
   }
 };
 
-export const sendMessage = async (): Promise<MessageResponse> => {
+const sendMessage = async () => {
   const messageResponse = await getBodyMessage();
 
   if (messageResponse?.body.length > 0) {
