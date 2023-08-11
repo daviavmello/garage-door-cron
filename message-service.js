@@ -1,7 +1,11 @@
 const dotenv = require("dotenv");
 dotenv.config();
 
-const { myQApi, myQDeviceInterface } = require("@hjdhjd/myq");
+const { myQApi } = require("@hjdhjd/myq");
+const express = require("express");
+
+const app = express();
+const port = process.env.PORT || 3000;
 
 const username = process.env.MY_Q_EMAIL;
 const password = process.env.MY_Q_PASSWORD;
@@ -108,4 +112,13 @@ const getGarageUpdates = async () => {
   return response;
 };
 
-getGarageUpdates();
+app.get("/garage-updates", async (req, res) => {
+  try {
+    const response = await getGarageUpdates();
+    res.status(response.statusCode).json(response.body);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.listen(port);
